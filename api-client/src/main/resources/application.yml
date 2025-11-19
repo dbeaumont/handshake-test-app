@@ -1,0 +1,15 @@
+server:
+  port: ${CLIENT_PORT:8080}
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: api-client
+
+downstream:
+  base-url: ${DOWNSTREAM_BASE_URL:https://api-server:8443/api/hello}
+  trust-store:
+    path: ${CLIENT_TRUSTSTORE:/app/certs/client-truststore.p12}
+    password: ${CLIENT_TRUSTSTORE_PASSWORD:changeit}
+    type: ${CLIENT_TRUSTSTORE_TYPE:PKCS12}

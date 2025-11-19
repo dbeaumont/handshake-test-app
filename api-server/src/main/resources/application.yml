@@ -1,0 +1,14 @@
+server:
+  port: ${SERVER_PORT:8443}
+  ssl:
+    enabled: true
+    key-store: ${SERVER_SSL_KEYSTORE:/app/certs/server-keystore.p12}
+    key-store-password: ${SERVER_SSL_KEYSTORE_PASSWORD:changeit}
+    key-store-type: ${SERVER_SSL_KEYSTORE_TYPE:PKCS12}
+    trust-store: ${SERVER_SSL_TRUSTSTORE:/app/certs/server-truststore.p12}
+    trust-store-password: ${SERVER_SSL_TRUSTSTORE_PASSWORD:changeit}
+    trust-store-type: ${SERVER_SSL_TRUSTSTORE_TYPE:PKCS12}
+    client-auth: none
+spring:
+  application:
+    name: api-server
