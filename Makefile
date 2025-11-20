@@ -1,13 +1,28 @@
 .PHONY: certs package compose-build compose-up compose-down compose-logs clean
 
-certs:
-	./certs/generate-certs.sh
+# full chain
+certs-fullchain:
+	./certs/generate-certs-fullchain.sh
 
+build-fullchain: package certs-fullchain
+	docker compose build
+
+rebuild-fullchain: package certs-fullchain
+	docker compose build --no-cache
+
+# server only
+certs-serveronly:
+	./certs/generate-certs-serveronly.sh
+
+build-serveronly: package certs-serveronly
+	docker compose build
+
+rebuild-serveronly: package certs-serveronly
+	docker compose build --no-cache
+
+# Global
 package:
 	mvn clean package
-
-build: package certs
-	docker compose build
 
 up:
 	docker compose up

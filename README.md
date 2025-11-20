@@ -89,3 +89,46 @@ Les volumes montent `./certs/generated` dans `/app/certs` pour les deux services
 - Le code `api-client` charge explicitement le truststore pour créer un `WebClient` sécurisé.
 - `certs/generated` est ignoré par Git pour éviter les fuites de secrets.
 
+
+
+## Uses cases
+
+### Cas 1
+
+Serveur : 
+- keystore contient les certifs   : server + intermédiaire + n/a
+
+Client : 
+- truststore contient les certifs : server + intermédiaire + root
+
+Test sur localhost :
+- curl http://localhost:8080/api/forward
+- fonctionne
+
+### Cas 2
+
+Serveur : 
+- keystore contient les certifs   : server + intermédiaire  + n/a
+
+Client : 
+- truststore contient les certifs : n/a    + n/a            + root
+
+Test sur localhost :
+- curl http://localhost:8080/api/forward
+- fonctionne
+
+### Cas 3
+
+Cas rencontré chez CAL&F actuellement
+
+Serveur : 
+- keystore contient les certifs   : server + n/a            + n/a
+
+Client : 
+- truststore contient les certifs : n/a    + intermediate   + root
+
+Test sur localhost :
+- curl http://localhost:8080/api/forward
+- ?
+
+TODO: Voir comment générer un api-server.crt avec juste le certif serveur dedans
