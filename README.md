@@ -5,6 +5,16 @@ Ce dépôt contient deux modules Spring Boot empaquetés chacun dans son image D
 - `api-server` expose `/api/hello` en HTTPS et retourne `"hello world"`.
 - `api-client` expose `/api/forward` qui invoque l'API précédente via HTTPS et renvoie la réponse.
 
+## Architecture du projet
+
+- **Conteneurs** : `api-server` (port interne 8443) et `api-client` (port interne 8080) sont construits via leurs Dockerfile respectifs et publiés sous `handshake/api-server` et `handshake/api-client`.
+- **Réseau** : Docker Compose crée un bridge interne ; le client atteint le serveur à l’URL `https://api-server:8443/api/hello` grâce au résolveur DNS interne.
+- **Volumes** : `./certs/generated` est monté en lecture seule sur `/app/certs` dans les deux conteneurs pour injecter keystore/truststore sans les embarquer dans les images.
+- **TLS côté serveur** : `api-server` démarre en HTTPS avec `SERVER_SSL_KEYSTORE` (clé et cert serveur) et `SERVER_SSL_TRUSTSTORE` (CAs acceptées si besoin de mutual TLS). Le mot de passe peut être surchargé via `${KEYSTORE_PASSWORD}` et `${TRUSTSTORE_PASSWORD}`.
+- **TLS côté client** : `api-client` construit un `WebClient` qui charge `CLIENT_TRUSTSTORE` pour vérifier le certificat du serveur. L’URL descendante est configurable via `DOWNSTREAM_BASE_URL`.
+- **Chemin des requêtes** : le navigateur (ou curl) appelle `http://localhost:8080/api/forward` → conteneur `api-client` → appel HTTPS sortant vers `api-server:8443` → réponse `"hello world"` renvoyée au client HTTP.
+- **Exposition vers l’hôte** : les ports 8080 (client) et 8443 (serveur) sont mappés respectivement sur l’hôte pour tester directement depuis la machine locale.
+
 ## Arborescence
 
 ```
@@ -25,44 +35,23 @@ Ce dépôt contient deux modules Spring Boot empaquetés chacun dans son image D
 └── Prompt initial.md
 ```
 
-## Génération des certificats
+## Makefile
 
-1. Assure-toi qu'un JDK 17+ est installé et que `JAVA_HOME` pointe vers ce JDK.
-2. Exécute le script :
-   ```bash
-   ./certs/generate-certs.sh
-   ```
-   - Mot de passe par défaut : `changeit` (overridable via `PASSWORD`).
-   - Le script crée `certs/generated/server-keystore.p12`, `server-truststore.p12`, `client-truststore.p12`, `api-server.crt`, `api-server-chain.crt`, `root-ca.crt` et `intermediate-ca.crt`.
-   - La clé privée d'`api-server` est désormais liée à un certificat signé par une autorité intermédiaire, elle-même signée par une racine dédiée.
-   - Le truststore client est basé sur le `cacerts` du JDK et enrichi avec la chaîne complète (racine + intermédiaire) et le certificat serveur exporté (-> c'est justelment ce qui est en cours d'étude).
+Pour faciliter l'utilisation de docker compose, on va utiliser la commande `make`
 
-## Construction des artefacts
+Commandes utiles :
+- `make certs` : génère les keystore et truststore pour les containers client et server
+- `make build` : compile le projet
+- `make rebuild` : recompile le projet (sans s'appuyer sur le cache)
+- `make up` : démarre le projet
+- `make down` : pour stopper les containers
 
-Compile les deux modules :
-```bash
-mvn clean package
+Cas d'usage typique :
+```bash 
+- Dans le Makefile, modifier sur la première ligne la variable SCRIPT_CERTS pour pointer vers le script du scénario à tester
+- make certs
+- make down rebuild up
 ```
-Les JAR nécessaires aux Dockerfiles sont alors disponibles dans `api-server/target` et `api-client/target`.
-
-## Construction des images Docker
-
-```bash
-# depuis la racine du dépôt
-docker compose build
-```
-Chaque image embarque uniquement le JRE et le JAR déjà construit. Les keystore/truststore sont montés au runtime.
-
-## Lancement via Docker Compose
-
-```bash
-docker compose up
-```
-Variables utiles :
-- `KEYSTORE_PASSWORD`, `TRUSTSTORE_PASSWORD`, `CLIENT_TRUSTSTORE_PASSWORD` pour remplacer les mots de passe par défaut dans `docker-compose.yml`.
-- Le conteneur `api-client` embarque désormais `openssl` et ajoute automatiquement les certificats `api-server.crt`, `root-ca.crt` et `intermediate-ca.crt` au truststore système pour que les commandes OpenSSL (exécutées via `docker compose exec api-client ...`) valident correctement la chaîne complète.
-
-Les volumes montent `./certs/generated` dans `/app/certs` pour les deux services.
 
 ## Tests
 
@@ -77,6 +66,7 @@ Les volumes montent `./certs/generated` dans `/app/certs` pour les deux services
    ```
    - Les logs du conteneur `api-client` afficheront les appels HTTPS sortants.
 3. Optionnel : inspecte les certificats chargés en consultant les logs Spring (`docker compose logs api-server`) ou en regardant la chaîne complète avec `certs/generated/api-server-chain.crt`.
+   
 4. Vérifier les certificats envoyés par le serveur au client
    ```bash
    Dans le container client, lancer la commande :
@@ -90,8 +80,7 @@ Les volumes montent `./certs/generated` dans `/app/certs` pour les deux services
 - `certs/generated` est ignoré par Git pour éviter les fuites de secrets.
 
 
-
-## Uses cases
+## Uses cases testés
 
 ### Cas 1
 
@@ -127,7 +116,6 @@ Le handshake renvoit :
 - Handshake Intermediate CA
 - api-server
 
-
 => tests ok
 
 ### Cas 3
@@ -162,6 +150,4 @@ Server Keystore :
 Le handshake renvoit :
 - api-server
 
-=> tests ???
-
-A TESTER : Pour passer de 3 à 4, il faut modifier server keystore
+=> tests KO (normal)
