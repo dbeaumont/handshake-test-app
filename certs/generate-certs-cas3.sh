@@ -165,9 +165,7 @@ keytool -gencert \
   -ext eku=serverAuth \
   -ext san="$SAN_DNS" >/dev/null
 
-# Server Only pour la chaine
-#cat "$SERVER_CERT" "$INTERMEDIATE_CERT" "$ROOT_CERT" > "$SERVER_CHAIN"
-cat "$SERVER_CERT" > "$SERVER_CHAIN"
+cat "$SERVER_CERT" "$INTERMEDIATE_CERT" "$ROOT_CERT" > "$SERVER_CHAIN"
 
 # Importe la chaîne complète dans le keystore serveur (server-keystore.p12)
 keytool -importcert \
@@ -212,13 +210,13 @@ keytool -importkeystore \
 
 echo "Truststore client initialisé à partir de cacerts"
 
-# Ajoute le certificat serveur seul pour faciliter les tests locaux (client-truststore.p12)
-keytool -importcert \
-  -alias api-server-local \
-  -file "$SERVER_CERT" \
-  -keystore "$CLIENT_TRUSTSTORE" \
-  -storepass "$PASSWORD" \
-  -noprompt
+# Ajoute le certificat serveur pour faciliter les tests locaux (client-truststore.p12)
+#keytool -importcert \
+#  -alias root-cert-local \
+#  -file "$SERVER_CERT" \
+#  -keystore "$CLIENT_TRUSTSTORE" \
+#  -storepass "$PASSWORD" \
+#  -noprompt
 
 # Ajoute la racine dans le truststore client (client-truststore.p12)
 keytool -importcert \

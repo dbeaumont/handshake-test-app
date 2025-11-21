@@ -210,7 +210,7 @@ keytool -importkeystore \
 
 echo "Truststore client initialisé à partir de cacerts"
 
-# Ajoute le certificat serveur seul pour faciliter les tests locaux (client-truststore.p12)
+# Ajoute le certificat serveur pour faciliter les tests locaux (client-truststore.p12)
 keytool -importcert \
   -alias api-server-local \
   -file "$SERVER_CERT" \

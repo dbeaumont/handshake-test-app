@@ -1,31 +1,23 @@
+SCRIPT_CERTS ?= "generate-certs-cas4.sh"
+
 .PHONY: certs package compose-build compose-up compose-down compose-logs clean
 
-# full chain
-certs-fullchain:
-	./certs/generate-certs-fullchain.sh
+certs:
+	./certs/$(SCRIPT_CERTS)
 
-build-fullchain: package certs-fullchain
+build: package
 	docker compose build
 
-rebuild-fullchain: package certs-fullchain
+rebuild: package
 	docker compose build --no-cache
 
-# server only
-certs-serveronly:
-	./certs/generate-certs-serveronly.sh
+full: down certs rebuilt up
 
-build-serveronly: package certs-serveronly
-	docker compose build
-
-rebuild-serveronly: package certs-serveronly
-	docker compose build --no-cache
-
-# Global
 package:
 	mvn clean package
 
 up:
-	docker compose up
+	docker compose up -d
 
 down:
 	docker compose down

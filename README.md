@@ -95,40 +95,73 @@ Les volumes montent `./certs/generated` dans `/app/certs` pour les deux services
 
 ### Cas 1
 
-Serveur : 
-- keystore contient les certifs   : server + intermédiaire + n/a
+Client Truststore : 
+- Handshake Root CA
+- Handshake Intermediate CA
+- api-server
 
-Client : 
-- truststore contient les certifs : server + intermédiaire + root
+Server Keystore : 
+- Handshake Root CA
+- Handshake Intermediate CA
+- api-server
 
-Test sur localhost :
-- curl http://localhost:8080/api/forward
-- fonctionne
+Le handshake renvoit :
+- Handshake Root CA
+- Handshake Intermediate CA
+- api-server
+
+=> tests ok
 
 ### Cas 2
 
-Serveur : 
-- keystore contient les certifs   : server + intermédiaire  + n/a
+Client Truststore : 
+- Handshake Root CA
+- Handshake Intermediate CA
+- api-server
 
-Client : 
-- truststore contient les certifs : n/a    + n/a            + root
+Server Keystore : 
+- Handshake Intermediate CA
+- api-server
 
-Test sur localhost :
-- curl http://localhost:8080/api/forward
-- fonctionne
+Le handshake renvoit :
+- Handshake Intermediate CA
+- api-server
+
+
+=> tests ok
 
 ### Cas 3
 
-Cas rencontré chez CAL&F actuellement
+Client Truststore : 
+- Handshake Root CA
+- Handshake Intermediate CA
 
-Serveur : 
-- keystore contient les certifs   : server + n/a            + n/a
+Server Keystore :
+- Handshake Root CA
+- Handshake Intermediate CA
+- api-server
 
-Client : 
-- truststore contient les certifs : n/a    + intermediate   + root
+Le handshake renvoit :
+- Handshake Root CA
+- Handshake Intermediate CA
+- api-server
 
-Test sur localhost :
-- curl http://localhost:8080/api/forward
-- ?
+=> tests ok
 
-TODO: Voir comment générer un api-server.crt avec juste le certif serveur dedans
+### Cas 4
+
+Test du contexte actuel de la PFE
+
+Client Truststore : 
+- Handshake Root CA
+- Handshake Intermediate CA
+
+Server Keystore :
+- api-server
+
+Le handshake renvoit :
+- api-server
+
+=> tests ???
+
+A TESTER : Pour passer de 3 à 4, il faut modifier server keystore
